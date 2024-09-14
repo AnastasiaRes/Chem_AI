@@ -21,13 +21,13 @@ data_path = os.path.join(base_dir, 'full_dataset.csv')
 # Загрузка датасета
 df = pd.read_csv(data_path)
 df_numeric = df.select_dtypes(exclude=['object']).copy()
+print(df.columns)
 
 # Хитмап всего датасета
 correlation_matrix = df_numeric.corr()
 plt.figure(figsize=(20, 16))  
 sns.heatmap(correlation_matrix, annot=False, cmap='coolwarm', fmt=".2f")
 plt.title('Correlation Heatmap')
-# # plt.show()
 
 # Вычисление корреляционной матрицы
 correlation_matrix = df_numeric.corr().abs()
@@ -46,15 +46,12 @@ df_reduced = df_numeric.drop(columns=to_drop)
 plt.figure(figsize=(20, 16))
 sns.heatmap(df_reduced.corr(), annot=False, cmap='coolwarm', fmt=".2f")
 plt.title('Correlation Heatmap of Reduced Dataset')
-# # plt.show()
 
-# # df_reduced.info()
-
-def variance_threshold(df,th):
+def variance_threshold(df_reduced,th):
     var_thres=VarianceThreshold(threshold=th)
-    var_thres.fit(df)
+    var_thres.fit(df_reduced)
     new_cols = var_thres.get_support()
-    return df.iloc[:,new_cols]
+    return df_reduced.iloc[:,new_cols]
 
 df_variance = variance_threshold(df_reduced, 0)
 
@@ -62,4 +59,16 @@ df_variance = variance_threshold(df_reduced, 0)
 plt.figure(figsize = (20, 16))
 sns.heatmap(df_variance.corr(), annot=False, cmap='coolwarm', fmt=".2f")
 plt.title('Correlation Heatmap of Reduced Dataset 2')
-# # plt.show()
+
+# Отбор коррелирующих признаков
+corr_matrix = df_variance.corr().abs()
+upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+to_drop = [column for column in upper.columns if 0.6 > any(upper[column] > 0.8)]
+df_variance.drop(to_drop, axis=1, inplace=True)
+
+
+df_variance['is_psychedelic'] = df['is_psychedelic']
+
+sns.pairplot(df_variance, hue='is_psychedelic', palette={0: 'green', 1: 'violet'})
+plt.show()
+
