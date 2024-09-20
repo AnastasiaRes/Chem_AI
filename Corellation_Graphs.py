@@ -5,7 +5,6 @@ Created on Tue Sep 10 13:42:13 2024
 @author: Adelina
 """
 
-#%%
 import pandas as pd
 import os
 import seaborn as sns
@@ -17,7 +16,6 @@ import scipy.stats as stats
 from scipy.stats import spearmanr
 '''
 
-#%%
 # Получаем путь к директории, где находится скрипт
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -29,14 +27,12 @@ df = pd.read_csv(data_path)
 df_numeric = df.select_dtypes(exclude=['object']).copy()
 print(df.columns)
 
-#%%
 # Хитмап всего датасета
 correlation_matrix = df_numeric.corr()
 plt.figure(figsize=(20, 16))  
 sns.heatmap(correlation_matrix, annot=False, cmap='coolwarm', fmt=".2f")
 plt.title('Correlation Heatmap')
 
-#%%
 # Вычисление корреляционной матрицы
 correlation_matrix = df_numeric.corr().abs()
 # Создание маски для верхнего треугольника корреляционной матрицы
@@ -50,13 +46,13 @@ to_drop = [column for column in upper_corr_matrix.columns if any(upper_corr_matr
 df_reduced = df_numeric.drop(columns=to_drop)
 # # print(f"Удаленные признаки: {to_drop}")
 
-#%%
+
 # Хитмап для очищенного датасета
 plt.figure(figsize=(20, 16))
 sns.heatmap(df_reduced.corr(), annot=False, cmap='coolwarm', fmt=".2f")
 plt.title('Correlation Heatmap of Reduced Dataset')
 
-#%%
+
 def variance_threshold(df_reduced,th):
     var_thres=VarianceThreshold(threshold=th)
     var_thres.fit(df_reduced)
@@ -65,17 +61,17 @@ def variance_threshold(df_reduced,th):
 
 df_variance = variance_threshold(df_reduced, 0)
 
-#%%
+
 # Хитмап для очищенного очищенного датасета
 plt.figure(figsize = (20, 16))
 sns.heatmap(df_variance.corr(), annot=False, cmap='coolwarm', fmt=".2f")
 plt.title('Correlation Heatmap of Reduced Dataset 2')
 
-#%%
+
 is_psychedelic = 'is_psychedelic'
 correlations = df_variance.corr()[is_psychedelic].drop(is_psychedelic)
 
-#%%
+
 '''# Создаем точечные графики для каждой переменной
 features = df_variance.columns.drop(is_psychedelic)
 for feature in features:
