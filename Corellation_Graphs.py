@@ -12,8 +12,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np 
 from sklearn.feature_selection import VarianceThreshold
-from scipy.stats import pearsonr
+import scipy.stats as stats
+'''from scipy.stats import pearsonr
 from scipy.stats import spearmanr
+'''
 
 #%%
 # Получаем путь к директории, где находится скрипт
@@ -74,7 +76,7 @@ is_psychedelic = 'is_psychedelic'
 correlations = df_variance.corr()[is_psychedelic].drop(is_psychedelic)
 
 #%%
-# Создаем точечные графики для каждой переменной
+'''# Создаем точечные графики для каждой переменной
 features = df_variance.columns.drop(is_psychedelic)
 for feature in features:
     plt.figure(figsize=(8, 6))
@@ -108,8 +110,63 @@ for feature in features:
              transform=plt.gca().transAxes, 
              fontsize=12, 
              bbox=dict(facecolor='white', alpha=0.5))
-    plt.show()
+    plt.show()'''
     
+#%%
+# T test
+group_psy = df_variance[df_variance['is_psychedelic'] == 1]
+group_non_psy = df_variance[df_variance['is_psychedelic'] == 0]
+
+# Предполагаем, что столбец 'is_psychedelic' существует в датасете
+features = df.columns.tolist()
+features.remove('is_psychedelic')
+
+results = []
+
+for feature in features:
+     # Извлекаем значения для каждой группы
+     psy_values = group_psy[feature].values
+     non_psy_values = group_non_psy[feature].values
+     t_stat, p_value = stats.ttest_ind(psy_values, non_psy_values, equal_var=False)
+     results.append({
+         'Feature': feature,
+         't-statistic': t_stat,
+         'p-value': p_value
+         })
+        
+results_df = pd.DataFrame(results)
+
+# График распределения значений для каждой группы
+def plot_distributions(feature, group_psy, group_non_psy):
+    plt.figure(figsize=(10, 5))
+    sns.histplot(group_psy[feature], kde=True, label='Psychedelic', color='blue', alpha=0.5)
+    sns.histplot(group_non_psy[feature], kde=True, label='Non-Psychedelic', color='orange', alpha=0.5)
+    plt.title(f'Distribution of {feature}')
+    plt.xlabel(feature)
+    plt.ylabel('Frequency')
+    plt.legend()
+    plt.show()
+
+# График t-статистики и p-значения для каждого признака
+def plot_t_test_results(results_df):
+    plt.figure(figsize=(10, 5))
+    sns.barplot(x='Feature', y='t-statistic', data=results_df, palette='viridis')
+    plt.title('t-statistic for Each Feature')
+    plt.xticks(rotation=90)
+    plt.show()
+
+    plt.figure(figsize=(10, 5))
+    sns.barplot(x='Feature', y='p-value', data=results_df, palette='viridis')
+    plt.title('p-value for Each Feature')
+    plt.xticks(rotation=90)
+    plt.show()
+
+# Пример использования функций для построения графиков
+for feature in features:
+    plot_distributions(feature, group_psy, group_non_psy)
+
+plot_t_test_results(results_df)
+
 #%%
 # Отбор коррелирующих признаков
 corr_matrix = df_variance.corr().abs()
