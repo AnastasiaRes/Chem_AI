@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np 
 from sklearn.feature_selection import VarianceThreshold
 import scipy.stats as stats
+from scipy.stats import shapiro
 '''from scipy.stats import pearsonr
 from scipy.stats import spearmanr
 '''
@@ -114,13 +115,22 @@ for feature in features:
     
 #%%
 # T test
+
 group_psy = df_variance[df_variance['is_psychedelic'] == 1]
 group_non_psy = df_variance[df_variance['is_psychedelic'] == 0]
 
-# Предполагаем, что столбец 'is_psychedelic' существует в датасете
 features = df_variance.columns.tolist()
 features.remove('is_psychedelic')
 
+# Проверка на нормальность
+for feature in features:
+    statistic, p_value = shapiro(group_psy[feature])
+    statistic1, p_value1 = shapiro(group_non_psy[feature])
+    print(f"Тест Шапиро-Уилка для психоделиков для столбца '{feature}':  W={statistic:.3f} p-value = {p_value:.4f}")
+    print(f"Тест Шапиро-Уилка для не психоделиков для столбца '{feature}':  W={statistic1:.3f} p-value = {p_value1:.4f}")
+
+#%%
+# Т test непосредственно
 results = []
 
 for feature in features:
