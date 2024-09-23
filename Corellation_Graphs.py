@@ -36,10 +36,27 @@ correlation_matrix = df_numeric.corr()
 plt.figure(figsize=(20, 16))  
 sns.heatmap(correlation_matrix, annot=False, cmap='coolwarm', fmt=".2f")
 plt.title('Correlation Heatmap')
+plt.show()
+
+#%%
+def variance_threshold(df_numeric,th):
+    var_thres=VarianceThreshold(threshold=th)
+    var_thres.fit(df_numeric)
+    new_cols = var_thres.get_support()
+    return df_numeric.iloc[:,new_cols]
+
+df_variance = variance_threshold(df_numeric, 0)
+
+#%%
+# Хитмап для очищенного датасета
+plt.figure(figsize = (20, 16))
+sns.heatmap(df_variance.corr(), annot=False, cmap='coolwarm', fmt=".2f")
+plt.title('Correlation Heatmap of Reduced Dataset 2')
+plt.show()
 
 #%%
 # Вычисление корреляционной матрицы
-correlation_matrix = df_numeric.corr().abs()
+correlation_matrix = df_variance.corr().abs()
 # Создание маски для верхнего треугольника корреляционной матрицы
 upper_triangle = np.triu(np.ones(correlation_matrix.shape), k=1).astype(bool)
 # Применение маски к корреляционной матрице
@@ -48,41 +65,27 @@ upper_corr_matrix = correlation_matrix.where(upper_triangle)
 threshold = 0.9  
 to_drop = [column for column in upper_corr_matrix.columns if any(upper_corr_matrix[column] > threshold)]
 # Создание нового DataFrame без сильно коррелированных признаков
-df_reduced = df_numeric.drop(columns=to_drop)
+df_reduced = df_variance.drop(columns=to_drop)
 # # print(f"Удаленные признаки: {to_drop}")
 
 #%%
-# Хитмап для очищенного датасета
+# Хитмап для очищенного очищенного датасета
 plt.figure(figsize=(20, 16))
 sns.heatmap(df_reduced.corr(), annot=False, cmap='coolwarm', fmt=".2f")
 plt.title('Correlation Heatmap of Reduced Dataset')
-
-#%%
-def variance_threshold(df_reduced,th):
-    var_thres=VarianceThreshold(threshold=th)
-    var_thres.fit(df_reduced)
-    new_cols = var_thres.get_support()
-    return df_reduced.iloc[:,new_cols]
-
-df_variance = variance_threshold(df_reduced, 0)
-
-#%%
-# Хитмап для очищенного очищенного датасета
-plt.figure(figsize = (20, 16))
-sns.heatmap(df_variance.corr(), annot=False, cmap='coolwarm', fmt=".2f")
-plt.title('Correlation Heatmap of Reduced Dataset 2')
+plt.show()
 
 #%%
 is_psychedelic = 'is_psychedelic'
-correlations = df_variance.corr()[is_psychedelic].drop(is_psychedelic)
+correlations = df_reduced.corr()[is_psychedelic].drop(is_psychedelic)
 
 #%%
 '''# Создаем точечные графики для каждой переменной
-features = df_variance.columns.drop(is_psychedelic)
+features = df_reduced.columns.drop(is_psychedelic)
 for feature in features:
     plt.figure(figsize=(8, 6))
-    sns.scatterplot(data=df_variance, x=feature, y=is_psychedelic)
-    correlation, p_value = pearsonr(df_variance[feature], df_variance[is_psychedelic])
+    sns.scatterplot(data=df_reduced, x=feature, y=is_psychedelic)
+    correlation, p_value = pearsonr(df_reduced[feature], df_reduced[is_psychedelic])
     plt.title(f'Корреляция Пирсона между {feature} и {is_psychedelic}')
     plt.xlabel(feature)
     plt.ylabel(is_psychedelic)
@@ -96,11 +99,11 @@ for feature in features:
     plt.show()
     
 # Создаем точечные графики для каждой переменной по спирмену
-correlations = df_variance.corr(method='spearman')[is_psychedelic].drop(is_psychedelic)
+correlations = df_reduced.corr(method='spearman')[is_psychedelic].drop(is_psychedelic)
 for feature in features:
     plt.figure(figsize=(8, 6))
-    sns.scatterplot(data=df_variance, x=feature, y=is_psychedelic, color='red')
-    correlation, p_value = spearmanr(df_variance[feature], df_variance['is_psychedelic'])
+    sns.scatterplot(data=df_reduced, x=feature, y=is_psychedelic, color='red')
+    correlation, p_value = spearmanr(df_reduced[feature], df_reduced['is_psychedelic'])
     plt.title(f'Корреляция Спирмена между {feature} и {is_psychedelic}')
     plt.xlabel(feature)
     plt.ylabel(is_psychedelic)
@@ -123,17 +126,25 @@ features = df_variance.columns.tolist()
 features.remove('is_psychedelic')
 
 # Проверка на нормальность
-for feature in features:
-    statistic, p_value = shapiro(group_psy[feature])
-    statistic1, p_value1 = shapiro(group_non_psy[feature])
-    print(f"Тест Шапиро-Уилка для психоделиков для столбца '{feature}':  W={statistic:.3f} p-value = {p_value:.4f}")
-    print(f"Тест Шапиро-Уилка для не психоделиков для столбца '{feature}':  W={statistic1:.3f} p-value = {p_value1:.4f}")
+normal_features = pd.DataFrame()
 
+for feature in features:
+    statistic_psy, p_value_psy = shapiro(group_psy[feature].values)
+    statistic_non_psy, p_value_non_psy = shapiro(group_non_psy[feature])
+    print(f"Тест Шапиро-Уилка для психоделиков для столбца '{feature}':  W={statistic_psy:.3f} p-value = {p_value_psy:.4f}")
+    print(f"Тест Шапиро-Уилка для не психоделиков для столбца '{feature}':  W={statistic_non_psy:.3f} p-value = {p_value_non_psy:.4f}")
+    if p_value_psy > 0.05 and p_value_non_psy > 0.05:
+        normal_features[feature] = df[feature] 
+
+normal_features['is_psychedelic'] = df['is_psychedelic']
+print('Столбцы с нормальным распределением:')
+print(normal_features)
+                 
 #%%
 # Т test непосредственно
 results = []
 
-for feature in features:
+for feature in normal_features:
      # Извлекаем значения для каждой группы
      psy_values = group_psy[feature].values
      non_psy_values = group_non_psy[feature].values
@@ -177,14 +188,31 @@ for feature in features:
 
 plot_t_test_results(results_df)
 
+#%% тест проверки
+'''
+mu, sigma = 0, 1
+sample1 = np.random.normal(0, 1, 1000)
+sample2 = np.random.normal(1, 2, 1000)
+sample3 = np.random.normal(0.5, 2, 1000)
+samples = pd.DataFrame({
+    'Sample1': sample1,
+    'Sample2': sample2,
+    'Sample3': sample3
+})
+
+for sample in samples:
+    statistic, p_value = shapiro(samples[sample])
+    print(f"Тест Шапиро-Уилка:  W={statistic:.3f} p-value = {p_value:.4f}")
+    '''
+
 #%%
 # Отбор коррелирующих признаков
-corr_matrix = df_variance.corr().abs()
+corr_matrix = df_reduced.corr().abs()
 upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
 to_drop = [column for column in upper.columns if 0.6 > any(upper[column] > 0.8)]
-df_variance.drop(to_drop, axis=1, inplace=True)
+df_reduced.drop(to_drop, axis=1, inplace=True)
 
-df_variance['is_psychedelic'] = df['is_psychedelic']
+df_reduced['is_psychedelic'] = df['is_psychedelic']
 
 sns.pairplot(df_variance, hue='is_psychedelic', palette={0: 'green', 1: 'violet'})
 plt.show()
