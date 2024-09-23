@@ -13,7 +13,6 @@ from sklearn.metrics import classification_report, accuracy_score
 import seaborn as sns
 from tabulate import tabulate
 
-
 # Загрузка данных
 def load_data(file_name):
     """
@@ -57,13 +56,13 @@ def apply_pca(df, columns):
     return pca_df
 
 # Применение t-SNE
-def apply_tsne(df, columns, perplexity=30, n_iter=1000):
+def apply_tsne(df, columns, perplexity=30, max_iter=1000):
     """
     Применяет t-SNE для снижения размерности данных.
     """
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(df[columns])
-    tsne = TSNE(n_components=2, random_state=42, perplexity=perplexity, n_iter=n_iter)
+    tsne = TSNE(n_components=2, random_state=42, perplexity=perplexity, max_iter=max_iter)
     X_tsne = tsne.fit_transform(X_scaled)
     tsne_df = pd.DataFrame(X_tsne, columns=['t-SNE1', 't-SNE2'])
     tsne_df['is_psychedelic'] = df['is_psychedelic'].values
@@ -181,15 +180,15 @@ def compare_clustering_methods(tsne_df, optimal_clusters=4, eps=0.5, min_samples
 
     # Вывод результатов
     for method in metrics:
-        print(f"\nМетод кластеризации: {method}")
+        print(f"\nClustering method: {method}")
         cluster_column = f"{method}_Cluster"
         if cluster_column in tsne_df.columns and metrics[method]['Silhouette'] is not None:
-            print(f"Количество кластеров: {len(set(tsne_df[cluster_column]))}")
+            print(f"Number of clusters: {len(set(tsne_df[cluster_column]))}")
             print(f"Silhouette Score: {metrics[method]['Silhouette']:.4f}")
             print(f"Calinski-Harabasz Index: {metrics[method]['Calinski-Harabasz']:.4f}")
             print(f"Davies-Bouldin Index: {metrics[method]['Davies-Bouldin']:.4f}")
         else:
-            print("Недостаточно кластеров для вычисления метрик.")
+            print("Not enough clusters to calculate metric.")
 
 
 # Кластеризация данных и визуализация (при сравнении выиграл KMeans)
@@ -242,7 +241,7 @@ def analyze_clusters_and_features(tsne_df, df, columns):
     cluster_summary['Total'] = cluster_summary['Psychedelic'] + cluster_summary['Non-Psychedelic']
     cluster_summary['Psychedelic_Ratio'] = cluster_summary['Psychedelic'] / cluster_summary['Total']
     significant_clusters = cluster_summary[cluster_summary['Psychedelic_Ratio'] > 0.6]
-    print("\n=== Значимые кластеры с преобладанием психоделических веществ ===")
+    print("\n=== Significant clusters dominated by psychedelic substances ===")
     print(significant_clusters)
 
     # Анализируем только значимые кластеры
@@ -268,12 +267,13 @@ def analyze_clusters_and_features(tsne_df, df, columns):
 
     # Оценка модели на тестовых данных
     y_pred_sig = rf_model_sig.predict(X_test_sig)
-    print("\n=== Отчет по классификации Random Forest на значимых кластерах ===")
+    print("\n=== Random Forest classification report on significant clusters ===")
     print(classification_report(y_test_sig, y_pred_sig))
-    print(f"Точность модели на значимых кластерах: {accuracy_score(y_test_sig, y_pred_sig):.2f}")
+    print(f"Model accuracy on significant clusters: {accuracy_score(y_test_sig, y_pred_sig):.2f}")
 
-    # --- Проведение ANOVA анализа по кластерам ---
-    print("\n=== ANOVA анализ по кластерам ===")
+
+    # Проведение ANOVA анализа по кластерам
+    print("\n=== ANOVA analysis by clusters ===")
     anova_results_cluster = []
     for column in columns:
         groups = [
@@ -284,6 +284,7 @@ def analyze_clusters_and_features(tsne_df, df, columns):
         anova_results_cluster.append({'Feature': column, 'F-Value': f_val, 'P-Value': p_val})
     anova_df_cluster = pd.DataFrame(anova_results_cluster).set_index('Feature').sort_values(by='P-Value')
     print(anova_df_cluster)
+
 
     # Выполнение корреляционного анализа
     correlation_methods = ['pearson', 'spearman']
@@ -301,7 +302,7 @@ def analyze_clusters_and_features(tsne_df, df, columns):
     summary_df = summary_df.join(correlation_df, how='outer')
     summary_df = summary_df.sort_values(by='RandomForest_Importance_Significant', ascending=False)
 
-    print("\n=== Сводная таблица результатов (Significant Clusters) ===")
+    print("\n=== Summary table of results (Significant Clusters) ===")
     print(tabulate(summary_df, headers='keys', tablefmt='psql'))
 
     # Визуализация важности признаков по Random Forest на значимых кластерах
@@ -357,9 +358,9 @@ def calculate_feature_importance_full_func_dataset(df, columns):
 
     # Оценка модели на тестовых данных
     y_pred = rf_model.predict(X_test)
-    print("\n=== Отчет по классификации Random Forest на выбранном наборе данных ===")
+    print("\n=== Random Forest classification report on selected dataset ===")
     print(classification_report(y_test, y_pred))
-    print(f"Точность модели на выбранном наборе данных: {accuracy_score(y_test, y_pred):.2f}")
+    print(f"Model accuracy on selected dataset: {accuracy_score(y_test, y_pred):.2f}")
 
     return rf_importances
 
@@ -367,7 +368,7 @@ def calculate_feature_importance_full_func_dataset(df, columns):
 # Основной код выполнения
 if __name__ == "__main__":
     df = load_data('full_dataset.csv')
-    functional_group_columns = [
+    functional_structural_columns = [
         'NumLipinskiHBA', 'NumLipinskiHBD', 'NumAmideBonds', 'NumHBD', 'NumHBA',
         'NumAromaticRings', 'NumSaturatedRings', 'NumAliphaticRings',
         'NumAromaticHeterocycles', 'NumSaturatedHeterocycles', 'NumAliphaticHeterocycles',
@@ -379,24 +380,23 @@ if __name__ == "__main__":
     missing_values = df.isnull().sum()
     missing_values = missing_values[missing_values > 0]
     if not missing_values.empty:
-        print("Пропущенные значения:")
+        print("Missing values:")
         print(missing_values)
         df = df.dropna()
     else:
-        print("Нет пропущенных значений.")
+        print("No missing values.")
 
 
     # Визуализация распределения признаков
-    # plot_histograms(df, functional_group_columns, 'is_psychedelic')
+    # plot_histograms(df, functional_structural_columns, 'is_psychedelic')
 
 
     # Применяем PCA и t-SNE
-    pca_df = apply_pca(df, functional_group_columns)
-    plot_dimensionality_reduction(pca_df, 'PCA of Functional Groups: Psychedelic vs Non-Psychedelic', 'PCA1', 'PCA2')
+    pca_df = apply_pca(df, functional_structural_columns)
+    plot_dimensionality_reduction(pca_df, 'PCA of Functional-Structural Descriptors: Psychedelic vs Non-Psychedelic', 'PCA1', 'PCA2')
 
-    tsne_df = apply_tsne(df, functional_group_columns)
-    plot_dimensionality_reduction(tsne_df, 't-SNE of Functional Groups: Psychedelic vs Non-Psychedelic', 't-SNE1',
-                                  't-SNE2')
+    tsne_df = apply_tsne(df, functional_structural_columns)
+    plot_dimensionality_reduction(tsne_df, 't-SNE of Functional-Structural Descriptors: Psychedelic vs Non-Psychedelic', 't-SNE1', 't-SNE2')
 
     # Определяем оптимальное количество кластеров и выполняем кластеризацию
     find_optimal_clusters(tsne_df[['t-SNE1', 't-SNE2']], max_clusters=10)
@@ -407,19 +407,19 @@ if __name__ == "__main__":
 
 
     # Анализ кластеров и оценка признаков
-    analyze_clusters_and_features(tsne_df, df, functional_group_columns)
+    analyze_clusters_and_features(tsne_df, df, functional_structural_columns)
 
     # Вычисление важности признаков для всех выбранных колнок
-    rf_importances_full = calculate_feature_importance_full_func_dataset(df, functional_group_columns)
+    rf_importances_full = calculate_feature_importance_full_func_dataset(df, functional_structural_columns)
 
     # Вывод результатов по Random Forest всех выбранных колнок
-    print("\n=== Важность признаков по Random Forest для всех выбранных колнок ===")
+    print("\n=== Feature importance by Random Forest for all selected columns ===")
     print(rf_importances_full)
 
     # Визуализация важности признаков
     plt.figure(figsize=(12, 6))
     sns.barplot(x='RandomForest_Importance', y=rf_importances_full.index, data=rf_importances_full)
-    plt.title('Feature Importances by Random Forest (Functional Groups Dataset)')
+    plt.title('Feature Importances by Random Forest (Functional-Structural Descriptors)')
     plt.xlabel('Importance')
     plt.ylabel('Feature')
     plt.show()
