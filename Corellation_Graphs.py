@@ -144,7 +144,7 @@ print(normal_features)
 # Т test непосредственно
 results = []
 
-for feature in normal_features:
+for feature in features:
      # Извлекаем значения для каждой группы
      psy_values = group_psy[feature].values
      non_psy_values = group_non_psy[feature].values
@@ -156,10 +156,10 @@ for feature in normal_features:
          })
         
 results_df = pd.DataFrame(results)
-
+'''
 # График распределения значений для каждой группы
 def plot_distributions(feature, group_psy, group_non_psy):
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(20, 5))
     sns.histplot(group_psy[feature], kde=True, label='Psychedelic', color='blue', alpha=0.5)
     sns.histplot(group_non_psy[feature], kde=True, label='Non-Psychedelic', color='orange', alpha=0.5)
     plt.title(f'Distribution of {feature}')
@@ -167,24 +167,25 @@ def plot_distributions(feature, group_psy, group_non_psy):
     plt.ylabel('Frequency')
     plt.legend()
     plt.show()
-
+'''
 # График t-статистики и p-значения для каждого признака
 def plot_t_test_results(results_df):
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(20, 10))
     sns.barplot(x='Feature', y='t-statistic', data=results_df, palette='viridis')
     plt.title('t-statistic for Each Feature')
     plt.xticks(rotation=90)
     plt.show()
 
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(20, 10))
     sns.barplot(x='Feature', y='p-value', data=results_df, palette='viridis')
     plt.title('p-value for Each Feature')
     plt.xticks(rotation=90)
     plt.show()
-
+    
+'''
 # Пример использования функций для построения графиков
 for feature in features:
-    plot_distributions(feature, group_psy, group_non_psy)
+    plot_distributions(feature, group_psy, group_non_psy)'''
 
 plot_t_test_results(results_df)
 
