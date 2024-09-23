@@ -131,8 +131,8 @@ normal_features = pd.DataFrame()
 for feature in features:
     statistic_psy, p_value_psy = shapiro(group_psy[feature].values)
     statistic_non_psy, p_value_non_psy = shapiro(group_non_psy[feature])
-    print(f"Тест Шапиро-Уилка для психоделиков для столбца '{feature}':  W={statistic_psy:.3f} p-value = {p_value_psy:.4f}")
-    print(f"Тест Шапиро-Уилка для не психоделиков для столбца '{feature}':  W={statistic_non_psy:.3f} p-value = {p_value_non_psy:.4f}")
+    print(f"Shapiro-Wilk test for psychedelic for feature '{feature}':  W={statistic_psy:.3f} p-value = {p_value_psy:.4f}")
+    print(f"Shapiro-Wilk test for non-psychedelic for feature '{feature}':  W={statistic_non_psy:.3f} p-value = {p_value_non_psy:.4f}")
     if p_value_psy > 0.05 and p_value_non_psy > 0.05:
         normal_features[feature] = df[feature] 
 
@@ -156,7 +156,7 @@ for feature in features:
          })
         
 results_df = pd.DataFrame(results)
-'''
+
 # График распределения значений для каждой группы
 def plot_distributions(feature, group_psy, group_non_psy):
     plt.figure(figsize=(20, 5))
@@ -167,7 +167,7 @@ def plot_distributions(feature, group_psy, group_non_psy):
     plt.ylabel('Frequency')
     plt.legend()
     plt.show()
-'''
+
 # График t-статистики и p-значения для каждого признака
 def plot_t_test_results(results_df):
     plt.figure(figsize=(20, 10))
@@ -182,10 +182,10 @@ def plot_t_test_results(results_df):
     plt.xticks(rotation=90)
     plt.show()
     
-'''
+
 # Пример использования функций для построения графиков
 for feature in features:
-    plot_distributions(feature, group_psy, group_non_psy)'''
+    plot_distributions(feature, group_psy, group_non_psy)
 
 plot_t_test_results(results_df)
 
